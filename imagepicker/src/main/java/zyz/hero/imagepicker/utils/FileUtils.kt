@@ -1,9 +1,5 @@
 package zyz.hero.imagepicker.utils
 
-import android.content.Context
-import android.net.Uri
-import android.os.Build
-import androidx.core.content.FileProvider
 import androidx.fragment.app.FragmentActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -19,14 +15,6 @@ import java.io.FileOutputStream
  */
 internal class FileUtils {
     companion object {
-        fun getFileUri(context: Context, filePath: String): Uri {
-            var file = File(filePath)
-            return if (Build.VERSION.SDK_INT >= 24)
-                FileProvider.getUriForFile(context, "zyz.hero.imagepicker.fileprovider", file)
-            else
-                Uri.fromFile(file)
-        }
-
         suspend fun uriToFile(
             activity: FragmentActivity,
             dataList: ArrayList<ResBean>,
@@ -34,16 +22,16 @@ internal class FileUtils {
             return@withContext dataList.map {
                 async {
                     activity.contentResolver.openInputStream(it.uri!!).use { inputStream ->
-                        var dir = File(ImagePicker.getTempDir(activity))
+                        val dir = File(ImagePicker.getTempDir(activity))
                         dir.mkdirs()
-                        var file = File(ImagePicker.getTempDir(activity) + it.name)
-                        if (file.exists()) {
-                            file.delete()
+                        return@async File(ImagePicker.getTempDir(activity) + it.name).apply {
+                            if (exists()) {
+                                delete()
+                            }
+                            FileOutputStream(this).use { outStream ->
+                                inputStream?.copyTo(outStream)
+                            }
                         }
-                        FileOutputStream(file).use { outStream ->
-                            inputStream?.copyTo(outStream)
-                        }
-                        file
                     }
                 }
             }.mapTo(arrayListOf()) {

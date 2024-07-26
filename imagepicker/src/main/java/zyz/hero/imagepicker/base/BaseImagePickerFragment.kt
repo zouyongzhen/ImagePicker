@@ -46,7 +46,7 @@ abstract class BaseImagePickerFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        recycler = view.findViewById(R.id.recycler) as RecyclerView
+        recycler = view.findViewById(R.id.recycler)
         recycler.layoutManager = GridLayoutManager(requireContext(), 4)
         (recycler.itemAnimator as? SimpleItemAnimator)?.supportsChangeAnimations = false
         recycler.adapter = ImageAdapter(requireContext(), pickConfig) {
@@ -70,7 +70,7 @@ abstract class BaseImagePickerFragment : Fragment() {
     }
 
     private fun refreshData() {
-        if (!mediaList.isNullOrEmpty()) {
+        if (mediaList.isNotEmpty()) {
             if (pickConfig.showCamara) {
                 mediaList.add(0, ResBean(isCamera = true))
             }
@@ -86,27 +86,25 @@ abstract class BaseImagePickerFragment : Fragment() {
             withContext(Dispatchers.IO) {
                 when (mediaType) {
                     is SelectType.All -> {
-                        var images = async { ResUtils.getImageData(requireContext()) }
-                        var videos = async { ResUtils.getVideoData(requireContext()) }
-                        mediaList.apply {
-                            addAll(images.await())
-                            addAll(videos.await())
-                        }
+                        val images = async { ResUtils.getImageData(requireContext()) }
+                        val videos = async { ResUtils.getVideoData(requireContext()) }
+                        mediaList.addAll(images.await())
+                        mediaList.addAll(videos.await())
                     }
+
                     is SelectType.Image -> {
-                        var images = async { ResUtils.getImageData(requireContext()) }
-                        mediaList.apply {
-                            addAll(images.await())
-                        }
+                        val images = async { ResUtils.getImageData(requireContext()) }
+                        mediaList.addAll(images.await())
+
                     }
+
                     is SelectType.Video -> {
-                        var videos = async { ResUtils.getVideoData(requireContext()) }
-                        mediaList.apply {
-                            addAll(videos.await())
-                        }
+                        val videos = async { ResUtils.getVideoData(requireContext()) }
+                        mediaList.addAll(videos.await())
+
                     }
                 }
-                mediaList?.sortByDescending { it.date }
+                mediaList.sortByDescending { it.date }
             }
             hideLoading()
             refreshData()

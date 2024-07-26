@@ -1,9 +1,14 @@
 package zyz.hero.imagepicker
 
+import android.content.Context
+import android.net.Uri
 import android.os.Bundle
 import android.widget.Button
+import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
+import com.bumptech.glide.Glide
 import zyz.hero.imagepicker.ext.pickResource
+import zyz.hero.imagepicker.imageLoader.ImageLoader
 import zyz.hero.imagepicker.sealeds.SelectType
 import zyz.hero.imagepicker.ui.dialog.SimpleLoadingDialog
 
@@ -15,13 +20,18 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        var loadingDialog = SimpleLoadingDialog()
+        val loadingDialog = SimpleLoadingDialog()
         findViewById<Button>(R.id.select).setOnClickListener { view ->
             pickResource {
-                setSelectType(SelectType.Image)
+                setSelectType(SelectType.All)
                 setMaxImageCount(6)
                 setMaxVideoCount(9)
-            }.asFile(showLoading = {
+                setImageLoader(object :ImageLoader{
+                    override fun load(context: Context, uri: Uri, imageView: ImageView) {
+                        Glide.with(context).load(uri).into(imageView)
+                    }
+                })
+            }.asPath(showLoading = {
                 loadingDialog.show(supportFragmentManager,null)
             }, hideLoading = {
                 loadingDialog.dismiss()

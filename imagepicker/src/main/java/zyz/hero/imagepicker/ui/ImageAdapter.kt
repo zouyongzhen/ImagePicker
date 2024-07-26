@@ -11,7 +11,6 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import zyz.hero.imagepicker.*
 import zyz.hero.imagepicker.ext.visible
-import zyz.hero.imagepicker.imageLoader.DefaultImageLoader
 import zyz.hero.imagepicker.sealeds.SelectType
 
 /**
@@ -32,14 +31,14 @@ class ImageAdapter(var context: Context, var pickConfig: PickConfig, val takePho
         return if (items[position].isCamera) TYPE_CAMARA else TYPE_RESOURCE
     }
 
-    open fun concatItems(newItems: MutableList<ResBean>?) {
+    fun concatItems(newItems: MutableList<ResBean>?) {
         if (newItems != null && newItems.size > 0) {
             items.addAll(newItems)
             notifyDataSetChanged()
         }
     }
 
-    open fun refreshItems(newItems: MutableList<ResBean>?) {
+    fun refreshItems(newItems: MutableList<ResBean>?) {
         if (newItems != null) {
             items.clear()
             items.addAll(newItems)
@@ -48,21 +47,24 @@ class ImageAdapter(var context: Context, var pickConfig: PickConfig, val takePho
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        return if (viewType == TYPE_CAMARA) CameraHolder(LayoutInflater.from(context)
-            .inflate(R.layout.item_image_picker_camera, parent, false)) else ImageHolder(
-            LayoutInflater.from(context).inflate(R.layout.item_image_picker_image, parent, false))
+        return if (viewType == TYPE_CAMARA) CameraHolder(
+            LayoutInflater.from(context)
+                .inflate(R.layout.item_image_picker_camera, parent, false)
+        ) else ImageHolder(
+            LayoutInflater.from(context).inflate(R.layout.item_image_picker_image, parent, false)
+        )
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         if (getItemViewType(position) == TYPE_CAMARA) {
             (holder as? CameraHolder)?.also {
                 holder.itemView.setOnClickListener {
-                    takePhoto?.invoke()
+                    takePhoto.invoke()
                 }
             }
         } else {
             (holder as? ImageHolder)?.apply {
-                var imageBean = items[position]
+                val imageBean = items[position]
                 select.visible = when (pickConfig.selectType) {
                     is SelectType.Image -> pickConfig.maxImageCount > 1
                     is SelectType.Video -> pickConfig.maxVideoCount > 1
@@ -70,8 +72,8 @@ class ImageAdapter(var context: Context, var pickConfig: PickConfig, val takePho
                 }
                 durationLayout.visible = imageBean.type == TYPE_VIDEO
                 if (imageBean.type == TYPE_VIDEO) {
-                    var minutes = imageBean.duration / 1000 / 60
-                    var seconds = imageBean.duration / 1000 % 60
+                    val minutes = imageBean.duration / 1000 / 60
+                    val seconds = imageBean.duration / 1000 % 60
                     duration.text = "${minutes}:${if (seconds >= 10) seconds else "0$seconds"}"
                 }
                 loadRes(context, imageBean.uri!!, image)
@@ -88,7 +90,7 @@ class ImageAdapter(var context: Context, var pickConfig: PickConfig, val takePho
                     if (imageBean.select) {
                         imageBean.select = false
                         selectedData.remove(imageBean)
-                        notifyItemChanged(items.indexOf(imageBean))
+                        notifyItemChanged(position)
                         selectedData.filter { it.select }.forEach {
                             notifyItemChanged(items.indexOf(it))
                         }
@@ -113,12 +115,12 @@ class ImageAdapter(var context: Context, var pickConfig: PickConfig, val takePho
     }
 
     private fun loadRes(context: Context, uri: Uri, imageView: ImageView) {
-        if (pickConfig.imageLoaderId != -1 && ImagePicker.imageLoaders[pickConfig.imageLoaderId] != null) {
-            ImagePicker.imageLoaders[pickConfig.imageLoaderId]?.load(context, uri, imageView)
-        } else if (ImagePicker.globalImageLoader != null) {
-            ImagePicker.globalImageLoader?.load(context, uri, imageView)
-        } else {
-            DefaultImageLoader().load(context, uri, imageView)
+        pickConfig.imageLoader?.run {
+            load(context, uri, imageView)
+        } ?: also {
+            ImagePicker.globalImageLoader?.run {
+                load(context, uri, imageView)
+            }
         }
     }
 
@@ -137,8 +139,6 @@ class ImageAdapter(var context: Context, var pickConfig: PickConfig, val takePho
         var select = itemView.findViewById<TextView>(R.id.select)
     }
 
-    class CameraHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-
-    }
+    class CameraHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
 
 }

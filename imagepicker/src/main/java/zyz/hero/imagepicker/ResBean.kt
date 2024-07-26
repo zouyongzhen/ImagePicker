@@ -13,7 +13,7 @@ data class ResBean(
     var name: String? = null,
     var type: String? = null,
     var duration: Long = 0,//时长
-    var memiType: String? = null,
+    var mimeType: String? = null,
     var date: Long? = null,
     var select: Boolean = false,
     var isCamera: Boolean = false,
@@ -34,7 +34,7 @@ data class ResBean(
         parcel.writeString(name)
         parcel.writeString(type)
         parcel.writeLong(duration)
-        parcel.writeString(memiType)
+        parcel.writeString(mimeType)
         parcel.writeValue(date)
         parcel.writeByte(if (select) 1 else 0)
         parcel.writeByte(if (isCamera) 1 else 0)

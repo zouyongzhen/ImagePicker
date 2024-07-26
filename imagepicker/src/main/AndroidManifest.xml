@@ -3,14 +3,17 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="zyz.hero.imagepicker">
 
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
 
     <application>
         <activity
             android:name=".ui.ImagePickerActivity"
+            android:exported="false"
             android:screenOrientation="portrait"/>
         <provider
             android:name="androidx.core.content.FileProvider"

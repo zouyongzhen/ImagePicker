@@ -1,8 +1,10 @@
 package zyz.hero.imagepicker
 
+import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
@@ -36,10 +38,6 @@ class ImagePicker private constructor() {
      * 图片加载器
      */
     private var imageLoader: ImageLoader? = null
-        set(value) {
-            imageLoaders[id] = value
-            field = value
-        }
 
     /**
      *是否显示拍照
@@ -109,55 +107,87 @@ class ImagePicker private constructor() {
         activity: FragmentActivity,
         target: Class<out AppCompatActivity> = ImagePickerActivity::class.java,
     ) {
+        val permissionList = mutableListOf<String>()
+        when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> {
+                if (showCamara) {
+                    permissionList.add(Manifest.permission.CAMERA)
+                }
+                when (selectType) {
+                    SelectType.All -> {
+                        permissionList.add(Manifest.permission.READ_MEDIA_IMAGES)
+                        permissionList.add(Manifest.permission.READ_MEDIA_VIDEO)
+                    }
+
+                    SelectType.Image -> {
+                        permissionList.add(Manifest.permission.READ_MEDIA_IMAGES)
+                    }
+
+                    SelectType.Video -> {
+                        permissionList.add(Manifest.permission.READ_MEDIA_VIDEO)
+                    }
+                }
+            }
+
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q -> {
+                if (showCamara) {
+                    permissionList.add(Manifest.permission.CAMERA)
+                }
+            }
+
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> {
+                if (showCamara) {
+                    permissionList.add(Manifest.permission.CAMERA)
+                }
+                permissionList.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+                permissionList.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            }
+        }
         if (checkParams()) {
-            HelperFragment.requestPermission(activity.supportFragmentManager,
-                permissions = if (showCamara) Permission.PERMISSION_CAMERA else Permission.PERMISSION_READ_WRITE) {
+            HelperFragment.requestPermission(
+                activity.supportFragmentManager,
+                *permissionList.toTypedArray()
+            ) {
                 if (it) {
-                    /**
-                     * 这里再申请一遍权限，防止ACCESS_MEDIA_LOCATION错误
-                     * It's not a good idea, but I can't think of any other way to deal with it
-                     */
-                    HelperFragment.requestPermission(activity.supportFragmentManager,
-                        permissions = if (showCamara) Permission.PERMISSION_CAMERA else Permission.PERMISSION_READ_WRITE) {
-                        HelperFragment.startActivityForResult(
-                            activity.supportFragmentManager,
-                            target,
-                            Bundle().apply {
-                                putSerializable("config", PickConfig(
+                    HelperFragment.startActivityForResult(
+                        activity.supportFragmentManager,
+                        target,
+                        Bundle().apply {
+                            putSerializable(
+                                "config", PickConfig(
                                     selectType,
                                     showCamara,
                                     maxImageCount,
                                     maxVideoCount,
-                                    imageLoaderId = if (imageLoader == null) -1 else id
-                                ))
-                            }
+                                    imageLoader
+                                )
+                            )
+                        }
 
-                        ) { code, data ->
-                            if (code == Activity.RESULT_OK) {
-                                (data?.getSerializableExtra("result") as? ArrayList<ResBean>)?.let { dataList ->
-                                    uriResult?.invoke(arrayListOf<Uri>().apply {
-                                        dataList.mapTo(this) { it.uri!! }
-                                    })
-                                    fileResult?.let {
-                                        activity.lifecycleScope.launch {
-                                            showLoading?.invoke()
-                                            var uriToFile = FileUtils.uriToFile(activity, dataList)
-                                            it.invoke(uriToFile)
-                                            hideLoading?.invoke()
-                                        }
-                                    }
-                                    pathResult?.let {
-                                        activity.lifecycleScope.launch {
-                                            showLoading?.invoke()
-                                            it.invoke(FileUtils.uriToFile(activity,
-                                                dataList).mapTo(arrayListOf()) { it.absolutePath })
-                                            hideLoading?.invoke()
-                                        }
+                    ) { code, data ->
+                        if (code == Activity.RESULT_OK) {
+                            (data?.getSerializableExtra("result") as? ArrayList<ResBean>)?.let { dataList ->
+                                uriResult?.invoke(arrayListOf<Uri>().apply {
+                                    dataList.mapTo(this) { it.uri!! }
+                                })
+                                fileResult?.let {
+                                    activity.lifecycleScope.launch {
+                                        showLoading?.invoke()
+                                        val uriToFile = FileUtils.uriToFile(activity, dataList)
+                                        it.invoke(uriToFile)
+                                        hideLoading?.invoke()
                                     }
                                 }
-                            }
-                            if (imageLoader != null) {
-                                imageLoaders.remove(id)
+                                pathResult?.let {
+                                    activity.lifecycleScope.launch {
+                                        showLoading?.invoke()
+                                        it.invoke(FileUtils.uriToFile(
+                                            activity,
+                                            dataList
+                                        ).mapTo(arrayListOf()) { it.absolutePath })
+                                        hideLoading?.invoke()
+                                    }
+                                }
                             }
                         }
                     }
@@ -168,12 +198,6 @@ class ImagePicker private constructor() {
     }
 
     private fun checkParams(): Boolean {
-        if ((maxImageCount < 0) or (maxVideoCount < 0)) {
-            return kotlin.run {
-                log("'maxImageCount' or 'maxVideoCount' can not be smaller than 0")
-                false
-            }
-        }
         when (selectType) {
             is SelectType.Image -> {
                 if (maxImageCount <= 0) {
@@ -183,6 +207,7 @@ class ImagePicker private constructor() {
                     }
                 }
             }
+
             is SelectType.Video -> {
                 if (maxVideoCount <= 0) {
                     return kotlin.run {
@@ -191,6 +216,7 @@ class ImagePicker private constructor() {
                     }
                 }
             }
+
             is SelectType.All -> {
                 if (maxImageCount <= 0 && maxVideoCount <= 0) {
                     return kotlin.run {
@@ -283,7 +309,7 @@ class ImagePicker private constructor() {
         }
 
         private fun deleteCache(context: Context) {
-            var file = File(getTempDir(context))
+            val file = File(getTempDir(context))
             if (file.exists()) {
                 file.deleteRecursively()
             }
@@ -295,7 +321,6 @@ class ImagePicker private constructor() {
             return ++id;
         }
 
-        val imageLoaders = hashMapOf<Int, ImageLoader?>()
         var globalImageLoader: ImageLoader? = null
     }
 }
