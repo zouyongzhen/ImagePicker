@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import zyz.hero.imagepicker.imageLoader.ImageLoader
+import zyz.hero.imagepicker.imageLoader.ResImageLoader
 import zyz.hero.imagepicker.sealeds.SelectType
 import zyz.hero.imagepicker.ui.ImagePickerActivity
 import zyz.hero.imagepicker.utils.FileUtils
@@ -34,7 +34,7 @@ class ImagePicker private constructor() {
     /**
      * 图片加载器
      */
-    private var imageLoader: ImageLoader? = null
+    private var imageLoader: ResImageLoader? = null
 
     /**
      *是否显示拍照
@@ -245,7 +245,7 @@ class ImagePicker private constructor() {
         /**
          * 图片加载方式
          */
-        private var imageLoader: ImageLoader? = null
+        private var imageLoader: ResImageLoader? = null
 
         /**
          *文件选择类型
@@ -269,7 +269,7 @@ class ImagePicker private constructor() {
             this.maxVideoCount = maxVideoCount
         }
 
-        fun setImageLoader(imageLoader: ImageLoader) {
+        fun setImageLoader(imageLoader: ResImageLoader) {
             this.imageLoader = imageLoader
         }
 

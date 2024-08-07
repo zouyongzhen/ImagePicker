@@ -7,9 +7,8 @@ import android.widget.Button
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import com.bumptech.glide.Glide
-import com.bumptech.glide.RequestBuilder
 import zyz.hero.imagepicker.ext.pickResource
-import zyz.hero.imagepicker.imageLoader.ImageLoader
+import zyz.hero.imagepicker.imageLoader.ResImageLoader
 import zyz.hero.imagepicker.sealeds.SelectType
 import zyz.hero.imagepicker.ui.dialog.SimpleLoadingDialog
 
@@ -27,7 +26,7 @@ class MainActivity : AppCompatActivity() {
                 setSelectType(SelectType.Image)
                 setMaxImageCount(6)
                 setMaxVideoCount(9)
-                setImageLoader(object :ImageLoader{
+                setImageLoader(object :ResImageLoader{
                     override fun load(context: Context, uri: Uri?, imageView: ImageView) {
                         Glide.with(context).load(uri).override(300).into(imageView)
                     }

@@ -1,5 +1,6 @@
 package zyz.hero.imagepicker.base
 
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -11,10 +12,12 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.OnScrollListener
 import androidx.recyclerview.widget.SimpleItemAnimator
 import kotlinx.coroutines.*
+import zyz.hero.imagepicker.ImagePicker
 import zyz.hero.imagepicker.ResBean
 import zyz.hero.imagepicker.PickConfig
 import zyz.hero.imagepicker.R
 import zyz.hero.imagepicker.TYPE_IMG
+import zyz.hero.imagepicker.imageLoader.ResImageLoader
 import zyz.hero.imagepicker.sealeds.SelectType
 import zyz.hero.imagepicker.ui.ImageAdapter
 import zyz.hero.imagepicker.utils.ResUtils
@@ -48,18 +51,27 @@ abstract class BaseImagePickerFragment : Fragment() {
         recycler.adapter = ImageAdapter(requireContext(), pickConfig) {
             takePhoto()
         }
-        recycler.addOnScrollListener(object :OnScrollListener(){
+        recycler.addOnScrollListener(object : OnScrollListener() {
             override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                 super.onScrollStateChanged(recyclerView, newState)
+                context ?: return
                 when (newState) {
                     RecyclerView.SCROLL_STATE_IDLE -> {
                         // 停止滑动时，恢复加载
-                        pickConfig.imageLoader?.resumeRequests(requireContext())
+                        activity?.let {
+                            if (!it.isFinishing){
+                                pickConfig.imageLoader?.resumeRequests(it)
+                            }
+                        }
                     }
+
                     RecyclerView.SCROLL_STATE_DRAGGING,
                     RecyclerView.SCROLL_STATE_SETTLING -> {
-                        // 滑动时，暂停加载
-                        pickConfig.imageLoader?.pauseRequests(requireContext())
+                        activity?.let {
+                            if (!it.isFinishing){
+                                pickConfig.imageLoader?.pauseRequests(it)
+                            }
+                        }
                     }
                 }
             }
