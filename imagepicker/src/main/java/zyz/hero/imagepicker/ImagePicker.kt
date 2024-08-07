@@ -30,9 +30,6 @@ import java.io.File
  * @date 2021/8/29 12:06 上午
  */
 class ImagePicker private constructor() {
-    private val id by lazy {
-        generateId()
-    }
 
     /**
      * 图片加载器
@@ -146,7 +143,7 @@ class ImagePicker private constructor() {
         if (checkParams()) {
             HelperFragment.requestPermission(
                 activity.supportFragmentManager,
-                *permissionList.toTypedArray()
+                permissionList.toTypedArray()
             ) {
                 if (it) {
                     HelperFragment.startActivityForResult(
@@ -316,11 +313,6 @@ class ImagePicker private constructor() {
         }
 
         fun getTempDir(context: Context) = "${context.cacheDir.absolutePath}/image_pick/"
-        private var id = 0;
-        private fun generateId(): Int {
-            return ++id;
-        }
 
-        var globalImageLoader: ImageLoader? = null
     }
 }

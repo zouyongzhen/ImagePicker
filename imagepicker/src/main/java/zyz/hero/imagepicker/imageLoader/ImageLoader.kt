@@ -10,5 +10,7 @@ import java.io.Serializable
  * @date 2022/8/10 09:33
  */
 interface ImageLoader :Serializable {
-    fun load(context: Context, uri: Uri, imageView: ImageView)
+    fun load(context: Context, uri: Uri?, imageView: ImageView)
+    fun pauseRequests(context: Context)
+    fun resumeRequests(context: Context)
 }

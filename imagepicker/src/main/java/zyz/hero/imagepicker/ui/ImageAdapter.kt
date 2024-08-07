@@ -5,11 +5,17 @@ import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver.OnGlobalLayoutListener
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
-import zyz.hero.imagepicker.*
+import zyz.hero.imagepicker.ImagePicker
+import zyz.hero.imagepicker.PickConfig
+import zyz.hero.imagepicker.R
+import zyz.hero.imagepicker.ResBean
+import zyz.hero.imagepicker.TYPE_IMG
+import zyz.hero.imagepicker.TYPE_VIDEO
 import zyz.hero.imagepicker.ext.visible
 import zyz.hero.imagepicker.sealeds.SelectType
 
@@ -74,9 +80,9 @@ class ImageAdapter(var context: Context, var pickConfig: PickConfig, val takePho
                 if (imageBean.type == TYPE_VIDEO) {
                     val minutes = imageBean.duration / 1000 / 60
                     val seconds = imageBean.duration / 1000 % 60
-                    duration.text = "${minutes}:${if (seconds >= 10) seconds else "0$seconds"}"
+                    durationText.text = "${minutes}:${if (seconds >= 10) seconds else "0$seconds"}"
                 }
-                loadRes(context, imageBean.uri!!, image)
+                loadRes(context, imageBean, image)
                 if (imageBean.select) {
                     select.text = (selectedData.indexOf(imageBean) + 1).toString()
                     select.setBackgroundResource(R.drawable.image_picker_shape_select)
@@ -114,14 +120,14 @@ class ImageAdapter(var context: Context, var pickConfig: PickConfig, val takePho
         }
     }
 
-    private fun loadRes(context: Context, uri: Uri, imageView: ImageView) {
+    private fun loadRes(context: Context, resBean: ResBean, imageView: ImageView) {
         pickConfig.imageLoader?.run {
-            load(context, uri, imageView)
-        } ?: also {
-            ImagePicker.globalImageLoader?.run {
-                load(context, uri, imageView)
-            }
+            load(context, getThumbUri(resBean), imageView)
         }
+    }
+
+    private fun getThumbUri(resBean: ResBean): Uri? {
+        return (resBean.thumbnailUri) ?: resBean.uri
     }
 
     private fun handleSelect(holder: ImageHolder, imageBean: ResBean) {
@@ -133,10 +139,10 @@ class ImageAdapter(var context: Context, var pickConfig: PickConfig, val takePho
     }
 
     class ImageHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        var image = itemView.findViewById<ImageView>(R.id.image)
-        var durationLayout = itemView.findViewById<ConstraintLayout>(R.id.durationLayout)
-        var duration = itemView.findViewById<TextView>(R.id.duration)
-        var select = itemView.findViewById<TextView>(R.id.select)
+        val image = itemView.findViewById<ImageView>(R.id.image)
+        val durationLayout = itemView.findViewById<ConstraintLayout>(R.id.durationLayout)
+        val durationText = itemView.findViewById<TextView>(R.id.durationText)
+        val select = itemView.findViewById<TextView>(R.id.select)
     }
 
     class CameraHolder(itemView: View) : RecyclerView.ViewHolder(itemView)

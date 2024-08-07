@@ -7,6 +7,7 @@ import android.widget.Button
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import com.bumptech.glide.Glide
+import com.bumptech.glide.RequestBuilder
 import zyz.hero.imagepicker.ext.pickResource
 import zyz.hero.imagepicker.imageLoader.ImageLoader
 import zyz.hero.imagepicker.sealeds.SelectType
@@ -23,12 +24,20 @@ class MainActivity : AppCompatActivity() {
         val loadingDialog = SimpleLoadingDialog()
         findViewById<Button>(R.id.select).setOnClickListener { view ->
             pickResource {
-                setSelectType(SelectType.All)
+                setSelectType(SelectType.Image)
                 setMaxImageCount(6)
                 setMaxVideoCount(9)
                 setImageLoader(object :ImageLoader{
-                    override fun load(context: Context, uri: Uri, imageView: ImageView) {
-                        Glide.with(context).load(uri).into(imageView)
+                    override fun load(context: Context, uri: Uri?, imageView: ImageView) {
+                        Glide.with(context).load(uri).override(300).into(imageView)
+                    }
+
+                    override fun pauseRequests(context: Context) {
+                        Glide.with(context).pauseRequests()
+                    }
+
+                    override fun resumeRequests(context: Context) {
+                        Glide.with(context).resumeRequests()
                     }
                 })
             }.asPath(showLoading = {

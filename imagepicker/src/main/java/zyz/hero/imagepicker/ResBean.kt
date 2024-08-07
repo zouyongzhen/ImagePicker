@@ -10,6 +10,7 @@ import android.os.Parcelable
  */
 data class ResBean(
     var uri: Uri? = null,
+    var thumbnailUri:Uri? = null,
     var name: String? = null,
     var type: String? = null,
     var duration: Long = 0,//时长
@@ -19,6 +20,7 @@ data class ResBean(
     var isCamera: Boolean = false,
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
+        parcel.readParcelable(Uri::class.java.classLoader),
         parcel.readParcelable(Uri::class.java.classLoader),
         parcel.readString(),
         parcel.readString(),
@@ -31,6 +33,7 @@ data class ResBean(
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeParcelable(uri, flags)
+        parcel.writeParcelable(thumbnailUri, flags)
         parcel.writeString(name)
         parcel.writeString(type)
         parcel.writeLong(duration)

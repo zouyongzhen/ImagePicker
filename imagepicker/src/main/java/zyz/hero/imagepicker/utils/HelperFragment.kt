@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
+import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
@@ -19,23 +20,6 @@ import java.io.File
 
 
 internal class HelperFragment : Fragment() {
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray,
-    ) {
-        try {
-            if (requestCode == REQUEST_PERMISSION_CODE) {
-                onPermissionResult?.invoke(grantResults.all { it == 0 })
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, e.toString())
-        } finally {
-            mFragmentManager?.beginTransaction()?.remove(this)?.commitNow()
-        }
-
-    }
 
     var onResult: ((resultCode: Int, data: Intent?) -> Unit)? = null
     var captureResult: ((ResBean?) -> Unit)? = null
@@ -67,7 +51,7 @@ internal class HelperFragment : Fragment() {
 
         fun requestPermission(
             fragmentManager: FragmentManager?,
-            vararg permissions: String,
+            permissions: Array<String>,
             onPermissionResult: (havePermission: Boolean) -> Unit,
         ) {
             if (permissions.isEmpty()) {
@@ -82,7 +66,7 @@ internal class HelperFragment : Fragment() {
                 .commitNow()
             tempFragment.onPermissionResult = onPermissionResult
             tempFragment.mFragmentManager = fragmentManager
-            tempFragment.requestPermissions(permissions, REQUEST_PERMISSION_CODE)
+            tempFragment.requestPermissionsForResult(permissions, REQUEST_PERMISSION_CODE)
         }
 
         fun takePhoto(
@@ -99,8 +83,22 @@ internal class HelperFragment : Fragment() {
             tempFragment.takePhoto()
         }
 
-        private const val TAG = "TempFragment"
+        private const val TAG = "HelperFragment"
         private const val REQUEST_PERMISSION_CODE = 501
+    }
+
+    private val permissionResultLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+        try {
+            onPermissionResult?.invoke(permissions.entries.all { it.value })
+        } catch (e: Exception) {
+            Log.e(TAG, e.toString())
+        } finally {
+            mFragmentManager?.beginTransaction()?.remove(this)?.commitNow()
+        }
+    }
+
+    private fun requestPermissionsForResult(permissions: Array<String>, requestPermissionCode: Int) {
+        permissionResultLauncher.launch(permissions)
     }
 
     private val startForResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -153,7 +151,7 @@ internal class HelperFragment : Fragment() {
                 values
             )
         uri?.let {
-            imageBean = ResBean(uri, fileName, TYPE_IMG)
+            imageBean = ResBean(uri = uri, name = fileName, type = TYPE_IMG)
             val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
                 putExtra(MediaStore.EXTRA_OUTPUT, uri)
             }

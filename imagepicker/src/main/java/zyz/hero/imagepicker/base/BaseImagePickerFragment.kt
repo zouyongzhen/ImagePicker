@@ -8,6 +8,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView.OnScrollListener
 import androidx.recyclerview.widget.SimpleItemAnimator
 import kotlinx.coroutines.*
 import zyz.hero.imagepicker.ResBean
@@ -31,11 +32,6 @@ abstract class BaseImagePickerFragment : Fragment() {
     var mediaType: SelectType? = null  //1：视频和图片、2：图片、3：视频
     var queryJob: Job? = null
     var mediaList = mutableListOf<ResBean>()
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        retainInstance = true
-    }
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -52,6 +48,22 @@ abstract class BaseImagePickerFragment : Fragment() {
         recycler.adapter = ImageAdapter(requireContext(), pickConfig) {
             takePhoto()
         }
+        recycler.addOnScrollListener(object :OnScrollListener(){
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+                when (newState) {
+                    RecyclerView.SCROLL_STATE_IDLE -> {
+                        // 停止滑动时，恢复加载
+                        pickConfig.imageLoader?.resumeRequests(requireContext())
+                    }
+                    RecyclerView.SCROLL_STATE_DRAGGING,
+                    RecyclerView.SCROLL_STATE_SETTLING -> {
+                        // 滑动时，暂停加载
+                        pickConfig.imageLoader?.pauseRequests(requireContext())
+                    }
+                }
+            }
+        })
         initData()
     }
 
@@ -60,7 +72,7 @@ abstract class BaseImagePickerFragment : Fragment() {
             if (pickConfig.showCamara) {
                 data?.let {
                     (recycler.adapter as ImageAdapter).apply {
-                        items.add(1, ResBean(it.uri, it.name, TYPE_IMG))
+                        items.add(1, ResBean(uri = it.uri, name = it.name, type = TYPE_IMG))
                         notifyItemInserted(1)
                     }
                 }
@@ -102,6 +114,11 @@ abstract class BaseImagePickerFragment : Fragment() {
                         val videos = async { ResUtils.getVideoData(requireContext()) }
                         mediaList.addAll(videos.await())
 
+                    }
+
+                    else -> {
+                        val images = async { ResUtils.getImageData(requireContext()) }
+                        mediaList.addAll(images.await())
                     }
                 }
                 mediaList.sortByDescending { it.date }
