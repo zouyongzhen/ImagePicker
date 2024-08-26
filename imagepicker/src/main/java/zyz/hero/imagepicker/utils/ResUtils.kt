@@ -69,7 +69,7 @@ object ResUtils {
             val displayNameColumn = it.getColumnIndexOrThrow(MediaStore.Video.Media.DISPLAY_NAME)
             val mimeTypeColumn = it.getColumnIndexOrThrow(MediaStore.Video.Media.MIME_TYPE)
             val dateAddedColumn = it.getColumnIndexOrThrow(MediaStore.Video.Media.DATE_ADDED)
-            val durationColumn = it.getColumnIndexOrThrow(MediaStore.Video.Media.DATE_ADDED)
+            val durationColumn = it.getColumnIndexOrThrow(MediaStore.Video.Media.DURATION)
 
             while (it.moveToNext()) {
                 val videoId = it.getLong(idColumn)

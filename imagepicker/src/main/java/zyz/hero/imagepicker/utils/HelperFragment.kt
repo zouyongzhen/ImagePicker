@@ -8,11 +8,11 @@ import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
-import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
+import zyz.hero.imagepicker.ImagePicker
 import zyz.hero.imagepicker.ResBean
 import zyz.hero.imagepicker.TYPE_IMG
 import zyz.hero.imagepicker.ui.ImagePickerActivity
@@ -21,7 +21,7 @@ import java.io.File
 
 internal class HelperFragment : Fragment() {
 
-    var onResult: ((resultCode: Int, data: Intent?) -> Unit)? = null
+    var onStartResult: ((resultCode: Int, data: Intent?) -> Unit)? = null
     var captureResult: ((ResBean?) -> Unit)? = null
     var onPermissionResult: ((havePermission: Boolean) -> Unit)? = null
     var mFragmentManager: FragmentManager? = null
@@ -33,13 +33,11 @@ internal class HelperFragment : Fragment() {
             params: Bundle = Bundle(),
             onResult: (resultCode: Int, data: Intent?) -> Unit = { _, _ -> },
         ) {
-            fragmentManager ?: return kotlin.run {
-                Log.e(TAG, "fragmentManager can not be null")
-            }
+            fragmentManager ?: return
             val tempFragment = HelperFragment()
             fragmentManager.beginTransaction().add(tempFragment, TAG + "_startActivityForResult")
                 .commitNow()
-            tempFragment.onResult = onResult
+            tempFragment.onStartResult = onResult
             tempFragment.mFragmentManager = fragmentManager
             tempFragment.startForResult(
                 Intent(
@@ -58,24 +56,20 @@ internal class HelperFragment : Fragment() {
                 onPermissionResult(true)
                 return
             }
-            fragmentManager ?: return kotlin.run {
-                Log.e(TAG, "fragmentManager can not be null")
-            }
+            fragmentManager ?: return
             val tempFragment = HelperFragment()
             fragmentManager.beginTransaction().add(tempFragment, TAG + "_requestPermission")
                 .commitNow()
             tempFragment.onPermissionResult = onPermissionResult
             tempFragment.mFragmentManager = fragmentManager
-            tempFragment.requestPermissionsForResult(permissions, REQUEST_PERMISSION_CODE)
+            tempFragment.requestPermissionsForResult(permissions)
         }
 
         fun takePhoto(
             fragmentManager: FragmentManager?,
             captureResult: (ResBean?) -> Unit = { },
         ) {
-            fragmentManager ?: return kotlin.run {
-                Log.e(TAG, "fragmentManager can not be null")
-            }
+            fragmentManager ?: return
             val tempFragment = HelperFragment()
             fragmentManager.beginTransaction().add(tempFragment, TAG + "_takePhoto").commitNow()
             tempFragment.captureResult = captureResult
@@ -84,30 +78,27 @@ internal class HelperFragment : Fragment() {
         }
 
         private const val TAG = "HelperFragment"
-        private const val REQUEST_PERMISSION_CODE = 501
     }
 
     private val permissionResultLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+        onPermissionResult?.invoke(permissions.entries.all { it.value })
         try {
-            onPermissionResult?.invoke(permissions.entries.all { it.value })
+            mFragmentManager?.beginTransaction()?.remove(this)?.commitAllowingStateLoss()
         } catch (e: Exception) {
-            Log.e(TAG, e.toString())
-        } finally {
-            mFragmentManager?.beginTransaction()?.remove(this)?.commitNow()
+            ImagePicker.log(e.toString())
         }
     }
 
-    private fun requestPermissionsForResult(permissions: Array<String>, requestPermissionCode: Int) {
+    private fun requestPermissionsForResult(permissions: Array<String>) {
         permissionResultLauncher.launch(permissions)
     }
 
     private val startForResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        onStartResult?.invoke(result.resultCode, result.data)
         try {
-            onResult?.invoke(result.resultCode, result.data)
+            mFragmentManager?.beginTransaction()?.remove(this)?.commitAllowingStateLoss()
         } catch (e: Exception) {
-            e.printStackTrace()
-        } finally {
-            mFragmentManager?.beginTransaction()?.remove(this)?.commitNow()
+            ImagePicker.log(e.toString())
         }
     }
 
@@ -118,13 +109,12 @@ internal class HelperFragment : Fragment() {
     private var imageBean: ResBean? = null
     private val takePhotoLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            try {
-                captureResult?.invoke(imageBean)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            } finally {
-                mFragmentManager?.beginTransaction()?.remove(this)?.commitNow()
-            }
+            captureResult?.invoke(imageBean)
+        }
+        try {
+            mFragmentManager?.beginTransaction()?.remove(this)?.commitAllowingStateLoss()
+        } catch (e: Exception) {
+            ImagePicker.log(e.toString())
         }
     }
 

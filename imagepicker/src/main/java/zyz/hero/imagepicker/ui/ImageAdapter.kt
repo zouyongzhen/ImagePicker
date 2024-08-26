@@ -96,9 +96,11 @@ class ImageAdapter(var context: Context, var pickConfig: PickConfig, val takePho
                     if (imageBean.select) {
                         imageBean.select = false
                         selectedData.remove(imageBean)
-                        notifyItemChanged(position)
-                        selectedData.filter { it.select }.forEach {
-                            notifyItemChanged(items.indexOf(it))
+                        notifyItemChanged(position,"")
+                        items.forEachIndexed {  index, resBean ->
+                            if (resBean.select) {
+                                notifyItemChanged(index,"")
+                            }
                         }
                     } else {
                         if (imageBean.type == TYPE_IMG) {

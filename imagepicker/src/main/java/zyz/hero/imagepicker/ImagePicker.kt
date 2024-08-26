@@ -105,37 +105,53 @@ class ImagePicker private constructor() {
         target: Class<out AppCompatActivity> = ImagePickerActivity::class.java,
     ) {
         val permissionList = mutableListOf<String>()
+        if (showCamara) {
+            permissionList.add(Manifest.permission.CAMERA)
+        }
         when {
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> {
-                if (showCamara) {
-                    permissionList.add(Manifest.permission.CAMERA)
-                }
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> {
                 when (selectType) {
-                    SelectType.All -> {
+                    is SelectType.All -> {
+                        permissionList.add(Manifest.permission.READ_MEDIA_IMAGES)
+                        permissionList.add(Manifest.permission.READ_MEDIA_VIDEO)
+                        permissionList.add(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED)
+                    }
+
+                    is SelectType.Image -> {
+                        permissionList.add(Manifest.permission.READ_MEDIA_IMAGES)
+                        permissionList.add(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED)
+                    }
+
+                    is SelectType.Video -> {
+                        permissionList.add(Manifest.permission.READ_MEDIA_VIDEO)
+                        permissionList.add(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED)
+                    }
+
+                }
+            }
+
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> {
+                when (selectType) {
+                    is SelectType.All -> {
                         permissionList.add(Manifest.permission.READ_MEDIA_IMAGES)
                         permissionList.add(Manifest.permission.READ_MEDIA_VIDEO)
                     }
 
-                    SelectType.Image -> {
+                    is SelectType.Image -> {
                         permissionList.add(Manifest.permission.READ_MEDIA_IMAGES)
                     }
 
-                    SelectType.Video -> {
+                    is SelectType.Video -> {
                         permissionList.add(Manifest.permission.READ_MEDIA_VIDEO)
                     }
                 }
             }
 
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q -> {
-                if (showCamara) {
-                    permissionList.add(Manifest.permission.CAMERA)
-                }
+                permissionList.add(Manifest.permission.READ_EXTERNAL_STORAGE)
             }
 
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> {
-                if (showCamara) {
-                    permissionList.add(Manifest.permission.CAMERA)
-                }
                 permissionList.add(Manifest.permission.READ_EXTERNAL_STORAGE)
                 permissionList.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
             }
@@ -196,7 +212,7 @@ class ImagePicker private constructor() {
 
     private fun checkParams(): Boolean {
         when (selectType) {
-            is SelectType.Image -> {
+            SelectType.Image -> {
                 if (maxImageCount <= 0) {
                     return kotlin.run {
                         log("maxImageCount must be greater than 0 when selecting pictures")
@@ -205,7 +221,7 @@ class ImagePicker private constructor() {
                 }
             }
 
-            is SelectType.Video -> {
+            SelectType.Video -> {
                 if (maxVideoCount <= 0) {
                     return kotlin.run {
                         log("maxVideoCount must be greater than 0 when selecting videos")
@@ -214,7 +230,7 @@ class ImagePicker private constructor() {
                 }
             }
 
-            is SelectType.All -> {
+            SelectType.All -> {
                 if (maxImageCount <= 0 && maxVideoCount <= 0) {
                     return kotlin.run {
                         log("When selecting pictures and videos, at least one of maxImageCount and maxVideoCount must be greater than 0")

@@ -23,12 +23,12 @@ class MainActivity : AppCompatActivity() {
         val loadingDialog = SimpleLoadingDialog()
         findViewById<Button>(R.id.select).setOnClickListener { view ->
             pickResource {
-                setSelectType(SelectType.Image)
+                setSelectType(SelectType.Video)
                 setMaxImageCount(6)
                 setMaxVideoCount(9)
-                setImageLoader(object :ResImageLoader{
+                setImageLoader(object : ResImageLoader() {
                     override fun load(context: Context, uri: Uri?, imageView: ImageView) {
-                        Glide.with(context).load(uri).override(300).into(imageView)
+                        Glide.with(context).load(uri).override(300,300).into(imageView)
                     }
 
                     override fun pauseRequests(context: Context) {
@@ -44,7 +44,7 @@ class MainActivity : AppCompatActivity() {
             }, hideLoading = {
                 loadingDialog.dismiss()
             }){
-
+                ImagePicker.log(it.toString())
             }.start(this)
         }
     }

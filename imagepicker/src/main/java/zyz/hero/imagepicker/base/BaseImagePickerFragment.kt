@@ -9,6 +9,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView.OnFlingListener
 import androidx.recyclerview.widget.RecyclerView.OnScrollListener
 import androidx.recyclerview.widget.SimpleItemAnimator
 import kotlinx.coroutines.*
@@ -47,7 +48,6 @@ abstract class BaseImagePickerFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         recycler = view.findViewById(R.id.recycler)
         recycler.layoutManager = GridLayoutManager(requireContext(), 4)
-        (recycler.itemAnimator as? SimpleItemAnimator)?.supportsChangeAnimations = false
         recycler.adapter = ImageAdapter(requireContext(), pickConfig) {
             takePhoto()
         }
@@ -59,7 +59,7 @@ abstract class BaseImagePickerFragment : Fragment() {
                     RecyclerView.SCROLL_STATE_IDLE -> {
                         // 停止滑动时，恢复加载
                         activity?.let {
-                            if (!it.isFinishing){
+                            if (!it.isFinishing) {
                                 pickConfig.imageLoader?.resumeRequests(it)
                             }
                         }
@@ -68,7 +68,7 @@ abstract class BaseImagePickerFragment : Fragment() {
                     RecyclerView.SCROLL_STATE_DRAGGING,
                     RecyclerView.SCROLL_STATE_SETTLING -> {
                         activity?.let {
-                            if (!it.isFinishing){
+                            if (!it.isFinishing) {
                                 pickConfig.imageLoader?.pauseRequests(it)
                             }
                         }
@@ -109,7 +109,7 @@ abstract class BaseImagePickerFragment : Fragment() {
             mediaList.clear()
             withContext(Dispatchers.IO) {
                 when (mediaType) {
-                    is SelectType.All -> {
+                   is SelectType.All -> {
                         val images = async { ResUtils.getImageData(requireContext()) }
                         val videos = async { ResUtils.getVideoData(requireContext()) }
                         mediaList.addAll(images.await())
